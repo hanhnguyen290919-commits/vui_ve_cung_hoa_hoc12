@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nông Trại Hóa Học 12: Thử Thách Lipid</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 50%, #8FBC8F 50%, #556B2F 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            user-select: none;
+        }
+
+        header {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+            border: 3px solid #4CAF50;
+        }
+
+        h1 {
+            color: #2E7D32;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .score-board {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* Khung cảnh Nông Trại */
+        .farm-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+            max-width: 900px;
+            width: 100%;
+            background: #8B5A2B;
+            padding: 25px;
+            border-radius: 25px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 10px 25px rgba(0,0,0,0.3);
+            border: 6px solid #5c3a17;
+        }
+
+        .plant-card {
+            background: #a67c52;
+            height: 120px;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            border: 3px dashed #6d4c27;
+            box-shadow: inset 0 5px 5px rgba(0,0,0,0.2);
+        }
+
+        .plant-card:hover {
+            transform: translateY(-5px) scale(1.05);
+            background: #b88b5c;
+        }
+
+        .plant-card.completed {
+            background: #4CAF50;
+            border: 3px solid #2E7D32;
+            cursor: default;
+        }
+
+        .plant-card.completed:hover {
+            transform: none;
+        }
+
+        .plant-icon {
+            font-size: 45px;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .plant-number {
+            position: absolute;
+            top: 5px;
+            left: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        /* Modal Hộp thoại Câu hỏi */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(3px);
+        }
+
+        .modal-content {
+            background: #FFF8DC;
+            width: 90%;
+            max-width: 550px;
+            padding: 25px;
+            border-radius: 20px;
+            border: 5px solid #8B4513;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            animation: popup 0.3s ease-out;
+            position: relative;
+        }
+
+        @keyframes popup {
+            from { transform: scale(0.7); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .question-title {
+            color: #8B4513;
+            font-size: 18px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background: #FFFFFF;
+            border: 2px solid #CD853F;
+            padding: 12px 15px;
+            border-radius: 12px;
+            text-align: left;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .option-btn:hover {
+            background: #FFE4B5;
+            border-color: #8B4513;
+        }
+
+        .feedback {
+            margin-top: 15px;
+            font-weight: bold;
+            text-align: center;
+            font-size: 16px;
+            min-height: 24px;
+        }
+
+        .close-btn {
+            margin-top: 15px;
+            width: 100%;
+            padding: 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            display: none;
+            font-weight: bold;
+        }
+
+        .close-btn:hover {
+            background: #45a049;
+        }
+
+        @media (max-width: 600px) {
+            .farm-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+            .plant-card {
+                height: 90px;
+            }
+            .plant-icon {
+                font-size: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🌾 NÔNG TRẠI HÓA HỌC: LIPID (HÓA 12) 🥦</h1>
+        <div class="score-board">Thu hoạch: <span id="score">0</span>/15 cây rau củ</div>
+    </header>
+
+    <div class="farm-grid" id="farmGrid">
+        <!-- 15 cây rau củ sẽ được tạo tự động bằng JS -->
+    </div>
+
+    <!-- Modal hiển thị câu hỏi -->
+    <div class="modal" id="questionModal">
+        <div class="modal-content">
+            <div class="question-title" id="questionText">Nội dung câu hỏi...</div>
+            <div class="options-container" id="optionsContainer">
+                <!-- Danh sách đáp án -->
+            </div>
+            <div class="feedback" id="feedbackText"></div>
+            <button class="close-btn" id="closeBtn" onclick="closeModal()">Tiếp tục thu hoạch ➔</button>
+        </div>
+    </div>
+
+    <script>
+        // Danh sách 15 câu hỏi bám sát 100% Sách Giáo Khoa Hóa 12
+        const questions = [
+            {
+                plant: "🥕",
+                name: "Cà rốt",
+                question: "1. Phát biểu nào sau đây đúng về khái niệm Lipid trong SGK?",
+                options: [
+                    "A. Là các hợp chất hữu cơ tan nhiều trong nước",
+                    "B. Là các hợp chất hữu cơ có trong tế bào sống, không tan trong nước nhưng tan trong dung môi hữu cơ không phân cực",
+                    "C. Là các hợp chất polimer thiên nhiên có khối lượng phân tử rất lớn",
+                    "D. Là các hydrocarbon không no chứa nhiều liên kết đôi C=C"
+                ],
+                answer: 1
+            },
+            {
+                plant: "🌽",
+                name: "Ngô",
+                question: "2. Chất béo (triglyceride) là triester của glycerol với chất nào sau đây?",
+                options: [
+                    "A. Acid acetic",
+                    "B. Acid béo",
+                    "C. Mineral acid",
+                    "D. Amino acid"
+                ],
+                answer: 1
+            },
+            {
+                plant: "🥦",
+                name: "Bông cải",
+                question: "3. Hầu hết các acid béo có đặc điểm cấu tạo nào sau đây?",
+                options: [
+                    "A. Mạch carbon ngắn, có phân nhánh, số C lẻ",
+                    "B. Mạch carbon dài (12-24 C), không phân nhánh, số C chẵn",
+                    "C. Mạch vòng thơm chứa nhóm OH phenol",
+                    "D. Mạch carbon dài có nhánh, chứa nhóm amino -NH2"
+                ],
+                answer: 1
+            },
+            {
+                plant: "🍅",
+                name: "Cà chua",
+                question: "4. Công thức cấu tạo thu gọn của palmitic acid (acid béo no) là gì?",
+                options: [
+                    "A. CH3[CH2]16COOH",
+                    "B. CH3[CH2]14COOH",
+                    "C. CH3[CH2]7CH=CH[CH2]7COOH",
+                    "D. C17H31COOH"
+                ],
+                answer: 1
+            },
+            {
+                plant: "🍆",
+                name: "Cà tím",
+                question: "5. Stearic acid là acid béo no chứa bao nhiêu nguyên tử carbon?",
+                options: [
+                    "A. 16 carbon",
+                    "B. 18 carbon (CH3[CH2]16COOH)",
+                    "C. 20 carbon",
+                    "D. 12 carbon"
+                ],
+                answer: 1
+            },
+            {
+                plant: "🥔",
+                name: "Khoai tây",
+                question: "6. Oleic acid là acid béo không no có chứa bao nhiêu liên kết đôi C=C trong phân tử?",
+                options: [
+                    "A. Không có liên kết đôi nào",
+                    "B. 1 liên kết đôi C=C",
+                    "C. 2 liên kết đôi C=C",
+                    "D. 3 liên kết đôi C=C"
+                ],
+                answer: 1
+            },
+            {
+                plant: "🥒",
+                name: "Dưa chuột",
+                question: "7. Ở nhiệt độ thường, chất béo chứa nhiều gốc acid béo no (như mỡ lợn, mỡ bò) tồn tại ở trạng thái nào?",
+                options: [
+                    "A. Trạng thái khí",
+                    "B. Trạng thái lỏng",
+                    "C. Trạng thái rắn",
+                    "D. Dung dịch keo"
+                ],
+                answer: 2
+            },
+            {
+                plant: "🥬",
+                name: "Rau cải",
+                question: "8. Tính chất vật lí chung của chất béo là gì?",
+                options: [
+                    "A. Nặng hơn nước, tan tốt trong nước",
+                    "B. Nhẹ hơn nước, không tan trong nước, dễ tan trong dung môi hữu cơ ít hoặc không phân cực",
+                    "C. Nặng hơn nước, không tan trong benzene",
+                    "D. Tan tốt trong nước đường và muối"
+                ],
+                answer: 1
+            },
+            {
+                plant: "🧄",
+                name: "Tỏi",
+                question: "9. Quá trình hydrogen hoá dầu thực vật (chất béo lỏng) có tác dụng chính là gì?",
+                options: [
+                    "A. Chuyển chất béo lỏng thành chất béo rắn (bơ thực vật)",
+                    "B. Làm bay hơi hoàn toàn chất béo",
+                    "C. Chuyển chất béo thành xà phòng rắn",
+                    "D. Biến đổi dầu thực vật thành chất khí"
+                ],
+                answer: 0
+            },
+            {
+                plant: "🧅",
+                name: "Hành tây",
+                question: "10. Hiện tượng dầu mỡ bị ôi khi để lâu trong không khí là do nguyên nhân nào?",
+                options: [
+                    "A. Do tác dụng của nước làm thủy phân gốc ester",
+                    "B. Gốc acid béo không no bị oxi hoá chậm bởi oxygen không khí tạo hợp chất có mùi khó chịu",
+                    "C. Do chất béo bị bay hơi biến chất",
+                    "D. Do vi khuẩn phân hủy gốc glycerol"
+                ],
+                answer: 1
+            },
+            {
+                plant: "🫑",
+                name: "Ớt chuông",
+                question: "11. Để bảo quản thực phẩm chế biến có chứa chất béo, người ta thường thêm các chất chống oxi hoá nào?",
+                options: [
+                    "A. Vitamin A, Vitamin D",
+                    "B. Vitamin C, Vitamin E",
+                    "C. Acid clorhidric",
+                    "D. Muối ăn NaCl"
+                ],
+                answer: 1
+            },
+            {
+                plant: "🥑",
+                name: "Bơ",
+                question: "12. Trong cơ thể, chất béo đóng vai trò môi trường vận chuyển và hấp thụ nhóm vitamin nào?",
+                options: [
+                    "A. Vitamin B và C",
+                    "B. Vitamin A, D, E và K",
+                    "C. Tất cả các loại khoáng chất",
+                    "D. Chỉ riêng Vitamin PP"
+                ],
+                answer: 1
+            },
+            {
+                plant: "🌶️",
+                name: "Ớt",
+                question: "13. So với carbohydrate (tinh bột, đường), chất béo khi bị chuyển hoá trong cơ thể cung cấp lượng năng lượng như thế nào?",
+                options: [
+                    "A. Ít năng lượng hơn",
+                    "B. Bằng đúng năng lượng tinh bột",
+                    "C. Nhiều năng lượng hơn",
+                    "D. Không cung cấp năng lượng"
+                ],
+                answer: 2
+            },
+            {
+                plant: "🍠",
+                name: "Khoai lang",
+                question: "14. Trong thuật ngữ 'Acid béo omega-3', số '3' có ý nghĩa chỉ vị trí liên kết đôi đầu tiên tính từ nhóm nào?",
+                options: [
+                    "A. Tính từ nhóm carboxyl (-COOH)",
+                    "B. Tính từ nhóm methyl (-CH3)",
+                    "C. Tính từ nguyên tử carbon ở giữa chuỗi",
+                    "D. Tính từ liên kết ba C≡C"
+                ],
+                answer: 1
+            },
+            {
+                plant: "🥜",
+                name: "Lạc",
+                question: "15. Loại thực phẩm nào sau đây được nêu trong SGK là chứa nhiều acid béo omega-3?",
+                options: [
+                    "A. Mỡ lợn",
+                    "B. Dầu cá biển",
+                    "C. Dầu cọ",
+                    "D. Bơ động vật"
+                ],
+                answer: 1
+            }
+        ];
+
+        let currentQuestionIndex = null;
+        let score = 0;
+        let answeredStatus = new Array(15).fill(false);
+
+        // Khởi tạo lưới cây trồng trong nông trại
+        function initFarm() {
+            const grid = document.getElementById('farmGrid');
+            grid.innerHTML = '';
+            
+            questions.forEach((q, index) => {
+                const card = document.createElement('div');
+                card.className = `plant-card ${answeredStatus[index] ? 'completed' : ''}`;
+                card.id = `plant-${index}`;
+                card.onclick = () => openQuestion(index);
+
+                card.innerHTML = `
+                    <span class="plant-number">#${index + 1}</span>
+                    <span class="plant-icon">${answeredStatus[index] ? '✨' : q.plant}</span>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Mở hộp thoại câu hỏi
+        function openQuestion(index) {
+            if (answeredStatus[index]) return; // Đã trả lời rồi thì không mở lại
+
+            currentQuestionIndex = index;
+            const q = questions[index];
+
+            document.getElementById('questionText').innerText = q.question;
+            document.getElementById('feedbackText').innerText = '';
+            document.getElementById('closeBtn').style.display = 'none';
+
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+
+            q.options.forEach((opt, optIndex) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(optIndex);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('questionModal').style.display = 'flex';
+        }
+
+        // Kiểm tra đáp án
+        function checkAnswer(selectedIndex) {
+            const q = questions[currentQuestionIndex];
+            const buttons = document.querySelectorAll('.option-btn');
+            const feedback = document.getElementById('feedbackText');
+
+            // Vô hiệu hóa các nút sau khi chọn
+            buttons.forEach(btn => btn.style.pointerEvents = 'none');
+
+            if (selectedIndex === q.answer) {
+                buttons[selectedIndex].style.background = '#C8E6C9';
+                buttons[selectedIndex].style.borderColor = '#2E7D32';
+                feedback.innerText = '🎉 Chính xác! Bạn đã thu hoạch được 1 cây rau củ!';
+                feedback.style.color = '#2E7D32';
+                
+                score++;
+                document.getElementById('score').innerText = score;
+                answeredStatus[currentQuestionIndex] = true;
+            } else {
+                buttons[selectedIndex].style.background = '#FFCDD2';
+                buttons[selectedIndex].style.borderColor = '#C62828';
+                buttons[q.answer].style.background = '#C8E6C9'; // Hiển thị đáp án đúng
+                feedback.innerText = '❌ Tiếc quá! Chưa chính xác rồi.';
+                feedback.style.color = '#C62828';
+            }
+
+            document.getElementById('closeBtn').style.display = 'block';
+        }
+
+        // Đóng hộp thoại và cập nhật lại nông trại
+        function closeModal() {
+            document.getElementById('questionModal').style.display = 'none';
+            initFarm();
+
+            if (score === 15) {
+                setTimeout(() => {
+                    alert('🎉 XUẤT SẮC! Bạn đã trả lời đúng tất cả 15 câu hỏi và thu hoạch toàn bộ nông trại Lipid!');
+                }, 300);
+            }
+        }
+
+        // Tự động chạy khi tải trang
+        window.onload = initFarm;
+    </script>
+</body>
+</html>
